@@ -6,7 +6,7 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
+
 
 import json
 import boto3
@@ -164,7 +164,7 @@ def swaptargetgroups(elbname):
     modify_tags(betatargetgroup, "IsProduction", "True")
 
 def modify_tags(arn,tagkey,tagvalue):
-    """Modifies the tags on the target groups as an identifier, after swap has been performed to indicate, 
+    """Modifies the tags on the target groups as an identifier, after swap has been performed to indicate,
         which target group is live and which target group is non-production
 
                 Args:
