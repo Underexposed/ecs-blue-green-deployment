@@ -88,15 +88,30 @@ Resources:
       Path: /
       AssumeRolePolicyDocument: |
         {
-            "Statement": [{
+            "Statement": [
+              {
                 "Effect": "Allow",
                 "Principal": { "Service": [ "ecs.amazonaws.com" ]},
                 "Action": [ "sts:AssumeRole" ]
-              }]
+              },
+              {
+                  "Effect": "Allow",
+                  "Action": [
+                      "ssm:DescribeParameters"
+                  ],
+                  "Resource": "*"
+              },
+              {
+                  "Effect": "Allow",
+                  "Action": [
+                      "ssm:GetParameters"
+                  ],
+                  "Resource": "arn:aws:ssm:us-east-1:<accountid>:parameter/*"
+              }
+            ]
         }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   Service:
     Type: AWS::ECS::Service
@@ -114,6 +129,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       #Family: !Sub ${AWS::StackName}-simple-app
+      ExecutionRoleArn: !GetAtt EcsTaskExecutionRole.Arn
       ContainerDefinitions:
         - Name: simple-app
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
@@ -135,11 +151,11 @@ Resources:
               Value: !Ref Tag
             - Name: TEST_ENV
               Value: IT WORKS 1!
-          # Secrets:
-          #   # - Name: DB_HOST
-          #   #   ValueFrom: arn:aws:ssm:eu-west-1:738308653220:DB_HOST
-          #   - Name: SECRETS_TEST
-          #     ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
+          Secrets:
+            # - Name: DB_HOST
+            #   ValueFrom: arn:aws:ssm:eu-west-1:738308653220:DB_HOST
+            - Name: SECRETS_TEST
+              ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
         - Name: busybox
           Image: busybox
           EntryPoint:
