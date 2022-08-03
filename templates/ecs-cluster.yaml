@@ -166,6 +166,7 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       SecurityGroups:
         - !Ref SecurityGroup
+      KeyName: "ArtsThreadNew"
       UserData:
         "Fn::Base64": !Sub |
           #!/bin/bash

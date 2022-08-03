@@ -92,10 +92,11 @@ Resources:
                 "Effect": "Allow",
                 "Principal": { "Service": [ "ecs.amazonaws.com" ]},
                 "Action": [ "sts:AssumeRole" ]
-            }]
+              }]
         }
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   Service:
     Type: AWS::ECS::Service
@@ -116,6 +117,8 @@ Resources:
       ContainerDefinitions:
         - Name: simple-app
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
+          #Image: 738308653220.dkr.ecr.eu-west-1.amazonaws.com/ami-php7:latest
+          #Image: 738308653220.dkr.ecr.eu-west-1.amazonaws.com/laravel-docker-aws:1.0
           EntryPoint:
             - /usr/sbin/apache2
             - -D
@@ -124,12 +127,19 @@ Resources:
           Memory: 128
           MountPoints:
             - SourceVolume: my-vol
-              ContainerPath: /var/www/my-vol
+              ContainerPath: /var/www/html
           PortMappings:
             - ContainerPort: 80
           Environment:
             - Name: Tag
               Value: !Ref Tag
+            - Name: TEST_ENV
+              Value: IT WORKS 1!
+          # Secrets:
+          #   # - Name: DB_HOST
+          #   #   ValueFrom: arn:aws:ssm:eu-west-1:738308653220:DB_HOST
+          #   - Name: SECRETS_TEST
+          #     ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
         - Name: busybox
           Image: busybox
           EntryPoint:
@@ -139,7 +149,5 @@ Resources:
           Memory: 128
           VolumesFrom:
             - SourceContainer: simple-app
-          Command:
-            - /bin/sh -c "while true; do /bin/date > /var/www/my-vol/date; sleep 1; done"
       Volumes:
         - Name: my-vol
