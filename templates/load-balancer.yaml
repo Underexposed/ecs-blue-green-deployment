@@ -10,12 +10,12 @@ Parameters:
 
   Subnet1:
     Type: AWS::EC2::Subnet::Id
+
   Subnet2:
     Type: AWS::EC2::Subnet::Id
 
   Name:
     Type: String
-
 
 Resources:
   SecurityGroup:
@@ -54,3 +54,11 @@ Outputs:
 
   LoadBalancerArn:
     Value: !Ref LoadBalancer
+
+  DNSName:
+    Description: "The URL of the Web Load Balancer"
+    Value: !GetAtt "LoadBalancer.DNSName"
+
+  HostedZoneId:
+    Description: "The CanonicalHostedZoneNameID of the Web Load Balancer"
+    Value: !GetAtt "LoadBalancer.CanonicalHostedZoneID"

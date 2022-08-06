@@ -19,6 +19,7 @@ Parameters:
 
   Subnet1:
     Type: AWS::EC2::Subnet::Id
+    
   Subnet2:
     Type: AWS::EC2::Subnet::Id
 
@@ -27,6 +28,10 @@ Parameters:
 
   VpcCIDR:
     Type: String
+
+  HostedZone:
+    Type: String
+
 
 Resources:
 
@@ -115,6 +120,7 @@ Resources:
                   - ecr:*
                   - iam:*
                   - ec2:*
+                  - route53:*
                   - elasticloadbalancing:*
                   - autoscaling:*
                   - ssm:*
@@ -407,7 +413,8 @@ Resources:
                       "Code2" : { "Fn::GetParam" : [ "DiscoveryOutput", "cf_inputs.json", "Code2" ] },
                       "Repository": "${Repository}",
                       "GitHubRepo": "${GitHubRepo}",
-                      "TemplateBucket": "${TemplateBucket}"
+                      "TemplateBucket": "${TemplateBucket}",
+                      "HostedZone": "${HostedZone}"
 
                   }
               InputArtifacts:

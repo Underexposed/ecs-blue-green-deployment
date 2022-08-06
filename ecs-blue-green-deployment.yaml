@@ -29,6 +29,10 @@ Parameters:
     Description: >
       S3 Bucket used for nested templates
 
+  HostedZone:
+    Default: "artsthread.dev"
+    Description: "Enter an existing Hosted Zone."
+    Type: "String"
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -66,6 +70,8 @@ Resources:
         Subnet2: !GetAtt VPC.Outputs.Subnet2
         VpcId: !GetAtt VPC.Outputs.VpcId
         VpcCIDR: 10.215.0.0/16
+        HostedZone: !Ref HostedZone
+
 
   VPC:
     Type: AWS::CloudFormation::Stack
@@ -82,3 +88,10 @@ Outputs:
  PipelineUrl:
     Description: The continuous deployment pipeline in the AWS Management Console.
     Value: !GetAtt DeploymentPipeline.Outputs.PipelineUrl
+
+  #HostedZone:
+  #  Description: "A reference to SSL Certificate ARN of the region"
+  #  Value: !Ref "HostedZone"
+  #  Export:
+      #Name: !Sub "${AWS::StackName}CDN-HostedZone"
+  #    Name: !Sub "dev-CDN-HostedZone"

@@ -176,15 +176,6 @@ Resources:
           Secrets: 
             - Name: TEST_ENV
               ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
-              
-          #  - Name: TEST_ENV
-          #    Value: IT WORKS BABY - ENV VARS HERE!
-          # Secrets:
-          #   # - Name: DB_HOST
-          #   #   ValueFrom: arn:aws:ssm:eu-west-1:738308653220:DB_HOST=-7
-          #   - Name: SECRETS_TEST
-          #     ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
-
         - Name: busybox
           Image: busybox
           EntryPoint:

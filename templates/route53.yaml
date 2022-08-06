@@ -1,0 +1,49 @@
+# Template: https://github.com/thinegan/cloudformation-project2/blob/master/infrastructure/ecs-route53.yaml
+# Note, You need at least 1 domain and this is not free tier.
+# Pricing : https://aws.amazon.com/route53/pricing/
+#
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+    This template deploys route53 Setup,
+    Alias Web Elastic Load Balancer to <domain>
+
+Parameters: 
+
+  WEBDOMAIN:
+    Description: "A reference to the Webserver FQDN domain name"
+    Type: "String"
+
+  HostedZone:
+    Description: "A reference to the Hosted Zone"
+    Type: "String"
+
+  DNSName:
+    Description: "A reference to the Webserver ELB DNS Name"
+    Type: "String"
+
+  HostedZoneId:
+    Description: "A reference to the Webserver ELB Hosted Zone ID"
+    Type: "String"
+
+Resources:
+
+  Route53:
+    Type: "AWS::Route53::RecordSetGroup"
+    Properties:
+      HostedZoneName: !Sub "${HostedZone}."
+      Comment: "Zone apex alias targeted to myELB LoadBalancer."
+      RecordSets:
+      - Name: !Sub "${WEBDOMAIN}."
+        Type: 'A'
+        AliasTarget:
+          HostedZoneId: !Ref "HostedZoneId"
+          DNSName: !Ref "DNSName"
+
+Outputs:
+
+  WEBRoute53:
+    Description: "A reference to the Route53"
+    Value: !Ref "Route53"
+
+

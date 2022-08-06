@@ -12,6 +12,7 @@ Parameters:
 
   Subnet1:
     Type: AWS::EC2::Subnet::Id
+
   Subnet2:
     Type: AWS::EC2::Subnet::Id
 
@@ -40,8 +41,12 @@ Parameters:
     Description: >
       S3 Bucket used for nested templates
 
+  HostedZone:
+    Type: String
+
 
 Mappings:
+
   AWSRegionToAMI:
     us-east-1:
       AMI: ami-71ef560b
@@ -65,6 +70,14 @@ Mappings:
       AMI: ami-2ab95148
     ca-central-1:
       AMI: ami-c802baac
+
+  # Specific Settings For Different Deployment Environments (Possibly Worth Setting Up Application Env Variables Here?)
+  EnvMap:
+    dev:
+      WEBDOMAIN: "dev.artsthread.dev"
+
+    prod:
+      WEBDOMAIN: "www.artsthread.dev"
 
 
 Resources:
@@ -185,6 +198,20 @@ Resources:
         VpcCIDR: !Ref VpcCIDR
         Name: !Ref GitHubRepo
 
+  Domain: 
+    Type: "AWS::CloudFormation::Stack"
+    #DependsOn:
+    #  - "LoadBalancer"
+    Properties:
+      TemplateURL: !Sub https://s3.amazonaws.com/${TemplateBucket}/templates/route53.yaml
+      TimeoutInMinutes: '5'
+      Parameters:
+        DNSName: !GetAtt "LoadBalancer.Outputs.DNSName"
+        HostedZoneId: !GetAtt "LoadBalancer.Outputs.HostedZoneId"
+        #WEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
+        WEBDOMAIN: !FindInMap ["EnvMap", "dev", "WEBDOMAIN"]
+        HostedZone: !Ref "HostedZone"
+
   GreenService:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -214,7 +241,6 @@ Resources:
         Repository: !Ref Repository
         Identifier: "Code1"
         IsProduction: True
-
 
 Outputs:
   ClusterName:
