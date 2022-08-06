@@ -31,7 +31,6 @@ Parameters:
   IsProduction:
     Type: String
 
-
 Resources:
 
   LoadBalancerListener:
@@ -98,6 +97,45 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties: 
+        Path: /
+        #RoleName: !Sub ${ServiceName}-ECSTaskExecutionRole-${AWS::Region}
+        AssumeRolePolicyDocument: |
+            {
+                "Statement": [{
+                    "Action": "sts:AssumeRole",
+                    "Effect": "Allow",
+                    "Principal": { 
+                        "Service": "ecs-tasks.amazonaws.com" 
+                    }
+                }]
+            }
+        Policies: 
+            - PolicyName: ecs-service
+              PolicyDocument: |
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                      {
+                          "Effect": "Allow",
+                          "Action": [
+                              "ecs:*",
+                              "ecr:*",
+                              "iam:*",
+                              "ec2:*",
+                              "ssm:*",
+                              "elasticloadbalancing:*",
+                              "autoscaling:*",
+                              "secretsmanager:GetSecretValue",
+                              "kms:Decrypt"
+                          ],
+                          "Resource": "*"
+                      }
+                  ]
+                } 
+
   Service:
     Type: AWS::ECS::Service
     Properties:
@@ -114,6 +152,8 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     Properties:
       #Family: !Sub ${AWS::StackName}-simple-app
+      #ExecutionRoleArn: arn:aws:iam::738308653220:role/ecsTaskExecutionRole
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
       ContainerDefinitions:
         - Name: simple-app
           Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}
@@ -133,13 +173,18 @@ Resources:
           Environment:
             - Name: Tag
               Value: !Ref Tag
+          Secrets: 
             - Name: TEST_ENV
-              Value: IT WORKS 1!
+              ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
+              
+          #  - Name: TEST_ENV
+          #    Value: IT WORKS BABY - ENV VARS HERE!
           # Secrets:
           #   # - Name: DB_HOST
-          #   #   ValueFrom: arn:aws:ssm:eu-west-1:738308653220:DB_HOST
+          #   #   ValueFrom: arn:aws:ssm:eu-west-1:738308653220:DB_HOST=-7
           #   - Name: SECRETS_TEST
           #     ValueFrom: arn:aws:ssm:eu-west-1:738308653220:parameter/development/secret_test
+
         - Name: busybox
           Image: busybox
           EntryPoint:
