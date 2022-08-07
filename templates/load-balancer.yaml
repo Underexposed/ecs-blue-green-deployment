@@ -21,176 +21,225 @@ Resources:
   SecurityGroup:
     Type: "AWS::EC2::SecurityGroup"
     Properties:
-      GroupDescription: !Sub ${AWS::StackName}-alb
-      SecurityGroupIngress:
-        - CidrIp: "0.0.0.0/0"
-          IpProtocol: "TCP"
+      GroupDescription: "Core Load Balancer Security Group"
+      GroupName: "core-elb-security-group"
+      Tags: 
+        - 
+          Key: "Project"
+          Value: "ArtsThread"
+        - 
+          Key: "createdBy"
+          Value: "Dan & Sam"
+        - 
+          Key: "Environment"
+          Value: "development"
+        - 
+          Key: "Name"
+          Value: "core-elb-security-group"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress: 
+        - 
+          CidrIp: "0.0.0.0/0"
           FromPort: 80
+          IpProtocol: "tcp"
           ToPort: 80
         # Change below CidrIp to !Ref VpcCIDR, if you want to restrict the beta version of the traffic to VPC CIDRs only
-        - CidrIp: "0.0.0.0/0"
-          IpProtocol: "TCP"
+        - 
+          CidrIp: "0.0.0.0/0"
           FromPort: 8080
+          IpProtocol: "tcp"
           ToPort: 8080
-      VpcId: !Ref VpcId
+        - 
+          CidrIp: "0.0.0.0/0"
+          FromPort: 443
+          IpProtocol: "tcp"
+          ToPort: 443
 
   LoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
     Properties:
-      Name: !Ref Name
-      Subnets:
-        - !Ref Subnet1
-        - !Ref Subnet2
-      SecurityGroups:
-        - !Ref SecurityGroup
+      Name: "ArtsThread-Load-Balancer"
       Scheme: "internet-facing"
+      Type: "application"
+      Subnets: 
+        - !Ref Subnet1
+        - !Ref Subnet1
+      SecurityGroups: 
+        - !Ref SecurityGroup
+      IpAddressType: "ipv4"
+      LoadBalancerAttributes: 
+        - 
+          Key: "access_logs.s3.enabled"
+          Value: "false"
+        - 
+          Key: "idle_timeout.timeout_seconds"
+          Value: "60"
+        - 
+          Key: "deletion_protection.enabled"
+          Value: "false"
+        - 
+          Key: "routing.http2.enabled"
+          Value: "true"
+        - 
+          Key: "routing.http.drop_invalid_header_fields.enabled"
+          Value: "false"
 
-  # We define a default target group here, as this is a mandatory Parameters
-  # when creating an Application Load Balancer Listener. This is not used, instead
-  # a target group is created per-service in each service template (../services/*)
-  DefaultTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  HTTPSListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
-      #Name: !Sub ${EnvironmentName}-default
-      Name: "dev-default"
-      VpcId: !Ref VpcId
-      Port: 80
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: "HTTPS"
+      SslPolicy: "ELBSecurityPolicy-2016-08"
+      Certificates: 
+        - 
+          CertificateArn: arn:aws:acm:eu-west-1:738308653220:certificate/4a2de45a-2c6b-4dfd-95b0-cea3bdc26ad8
+          
+      DefaultActions: 
+        - 
+          Order: 1
+          TargetGroupArn: !Ref Test1TargetGroup
+          Type: "forward"
 
-  Listener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
+  HTTPListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref DefaultTargetGroup
+      Protocol: "HTTP"
+      DefaultActions: 
+        - 
+          Order: 1
+          RedirectConfig: 
+            Protocol: "HTTPS"
+            Port: "443"
+            Host: "#{host}"
+            Path: "/#{path}"
+            Query: "#{query}"
+            StatusCode: "HTTP_301"
+          Type: "redirect"            
 
-  ListenerCertificate:
-    Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
-    Properties: 
-      Certificates: 
-      #  - CertificateArn: !Ref CertificateArn
-        - CertificateArn: arn:aws:acm:eu-west-1:738308653220:certificate/4a2de45a-2c6b-4dfd-95b0-cea3bdc26ad8
-      ListenerArn: !Ref Listener
-      Protocol: HTTP   
+  Test1TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: "/"
+      Port: 80
+      Protocol: "HTTP"
+      HealthCheckPort: "traffic-port"
+      HealthCheckProtocol: "HTTP"
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      TargetType: "instance"
+      Matcher: 
+        HttpCode: "200"
+      HealthyThresholdCount: 5
+      VpcId: !Ref VpcId
+      Name: "target-group-1"
+      HealthCheckEnabled: true
+      TargetGroupAttributes: 
+        - 
+          Key: "stickiness.enabled"
+          Value: "false"
+        - 
+          Key: "deregistration_delay.timeout_seconds"
+          Value: "300"
+        - 
+          Key: "stickiness.type"
+          Value: "lb_cookie"
+        - 
+          Key: "stickiness.lb_cookie.duration_seconds"
+          Value: "86400"
+        - 
+          Key: "slow_start.duration_seconds"
+          Value: "0"
+        - 
+          Key: "load_balancing.algorithm.type"
+          Value: "round_robin"
 
+  Test2TargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: "/"
+      Port: 80
+      Protocol: "HTTP"
+      HealthCheckPort: "traffic-port"
+      HealthCheckProtocol: "HTTP"
+      HealthCheckTimeoutSeconds: 5
+      UnhealthyThresholdCount: 2
+      TargetType: "instance"
+      Matcher: 
+        HttpCode: "200"
+      HealthyThresholdCount: 5
+      VpcId: !Ref VpcId
+      Name: "target-group-2"
+      HealthCheckEnabled: true
+      TargetGroupAttributes: 
+        - 
+          Key: "stickiness.enabled"
+          Value: "false"
+        - 
+          Key: "deregistration_delay.timeout_seconds"
+          Value: "300"
+        - 
+          Key: "stickiness.type"
+          Value: "lb_cookie"
+        - 
+          Key: "stickiness.lb_cookie.duration_seconds"
+          Value: "86400"
+        - 
+          Key: "slow_start.duration_seconds"
+          Value: "0"
+        - 
+          Key: "load_balancing.algorithm.type"
+          Value: "round_robin"
+              
+  TestListenerRule1:
+    Type: "AWS::ElasticLoadBalancingV2::ListenerRule"
+    Properties:
+      Priority: "1"
+      ListenerArn: !Ref HTTPSListener
+      Conditions: 
+        - 
+          Field: "host-header"
+          Values: 
+            - "dev.artsthread.dev"
+      Actions: 
+        - 
+          Type: "forward"
+          TargetGroupArn: !Ref Test1TargetGroup
+          Order: 1
+          ForwardConfig: 
+            TargetGroups: 
+              - 
+                TargetGroupArn: !Ref Test1TargetGroup
+                Weight: 1
+            TargetGroupStickinessConfig: 
+              Enabled: false
 
-
-
-
-
-
-
-
-      # This Is Old YAML For V1 Load Balancers - Jesus Christ... So Much Time Wasted...
-      # Listeners:
-      #   - InstancePort: '80'
-      #     InstanceProtocol: "HTTP"
-      #     LoadBalancerPort: '80'
-      #     Protocol: "HTTP"
-        # - LoadBalancerPort: '443'
-        #   Protocol: "HTTPS"
-        #   InstancePort: '80'
-        #   InstanceProtocol: "HTTP"
-        #   SSLCertificateId: !Ref "CertificateArn"
-      #     PolicyNames:
-      #       #- !Sub "${PMServerEnv}-SSLNegotiationPolicy"
-      #       - "dev-SSLNegotiationPolicy"
-      # # List aws elb describe-load-balancer-policies
-      # Policies:
-      #   #- PolicyName: !Sub "${PMServerEnv}-SSLNegotiationPolicy"
-      #   - PolicyName: "dev-SSLNegotiationPolicy"
-      #     PolicyType: "SSLNegotiationPolicyType"
-      #     Attributes:
-      #     - Name: "Server-Defined-Cipher-Order"
-      #       Value: 'true'
-      #     - Name: "Protocol-TLSv1"
-      #       Value: 'false'
-      #     - Name: "Protocol-TLSv1.1"
-      #       Value: 'false'
-      #     - Name: "Protocol-TLSv1.2"
-      #       Value: 'true'
-      #     - Name: "Protocol-SSLv3"
-      #       Value: 'false'
-      #     - Name: "ECDHE-ECDSA-AES128-GCM-SHA256"
-      #       Value: 'true'
-      #     - Name: "ECDHE-ECDSA-AES128-GCM-SHA256"
-      #       Value: 'true'
-      #     - Name: "ECDHE-ECDSA-AES128-SHA256"
-      #       Value: 'true'
-      #     - Name: "ECDHE-RSA-AES128-SHA256"
-      #       Value: 'true'
-      #     - Name: "ECDHE-ECDSA-AES256-GCM-SHA384"
-      #       Value: 'true'
-      #     - Name: "ECDHE-RSA-AES256-GCM-SHA384"
-      #       Value: 'true'
-      #     - Name: "ECDHE-ECDSA-AES256-SHA384"
-      #       Value: 'true'
-      #     - Name: "ECDHE-RSA-AES256-SHA384"
-      #       Value: 'true'
-      #     - Name: "AES128-GCM-SHA256"
-      #       Value: 'true'
-      #     - Name: "AES128-SHA256"
-      #       Value: 'true'
-      #     - Name: "AES256-GCM-SHA384"
-      #       Value: 'true'
-      #     - Name: "AES256-SHA256"
-      #       Value: 'true'
-      # 
-
-  # Listener:
-  #   Type: AWS::ElasticLoadBalancingV2::Listener
-  #   Properties:
-  #     LoadBalancerArn: !Ref LoadBalancer
-  #     Port: 80
-  #     Protocol: HTTP
-  #     DefaultActions:
-  #       - Type: forward
-  #         TargetGroupArn: !Ref DefaultTargetGroup
-
-        
-  # ListenerCertificate:
-  #   Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
-  #   Properties: 
-  #     Certificates: 
-  #       - Certificate
-  #     ListenerArn: String
-
-  # # We define a default target group here, as this is a mandatory Parameters
-  # # when creating an Application Load Balancer Listener. This is not used, instead
-  # # a target group is created per-service in each service template (../services/*)
-  # DefaultTargetGroup:
-  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
-  #   Properties:
-  #     #Name: !Sub ${EnvironmentName}-default
-  #     Name: "dev-default"
-  #     VpcId: !Ref VpcId
-  #     Port: 80
-  #     Protocol: HTTP   
-
-  # Listener:
-  #   Type: AWS::ElasticLoadBalancingV2::Listener
-  #   Properties:
-  #     LoadBalancerArn: !Ref LoadBalancer
-  #     Port: 443
-  #     Protocol: HTTPS
-  #     DefaultActions:
-  #       - Type: forward
-  #         TargetGroupArn: !Ref TargetGroup
-
-  # ListenerRule:
-  #   Type: AWS::ElasticLoadBalancingV2::ListenerRule
-  #   Properties:
-  #     Actions:
-  #       - Type: forward
-  #         TargetGroupArn: !Ref TargetGroup
-  #     Conditions:
-  #       - Field: path-pattern
-  #         Values:
-  #         - "*"
-  #     ListenerArn: !Ref LoadBalancerListener
-  #     Priority: 1
+  TestListenerRule2:
+    Type: "AWS::ElasticLoadBalancingV2::ListenerRule"
+    Properties:
+      Priority: "2"
+      ListenerArn: !Ref HTTPSListener
+      Conditions: 
+        - 
+          Field: "host-header"
+          Values: 
+            - "dev2.artsthread.dev"
+      Actions: 
+        - 
+          Type: "forward"
+          TargetGroupArn: !Ref Test2TargetGroup
+          Order: 1
+          ForwardConfig: 
+            TargetGroups: 
+              - 
+                TargetGroupArn: !Ref Test2TargetGroup
+                Weight: 1
+            TargetGroupStickinessConfig: 
+                Enabled: false
         
 Outputs:
   ServiceUrl:
@@ -210,3 +259,11 @@ Outputs:
   HostedZoneId:
     Description: "The CanonicalHostedZoneNameID of the Web Load Balancer"
     Value: !GetAtt "LoadBalancer.CanonicalHostedZoneID"
+
+  TargetGroup1:
+    Description: The created TargetGroup 1
+    Value: !Ref Test1TargetGroup
+
+  TargetGroup2:
+    Description: The created TargetGroup 2
+    Value: !Ref Test2TargetGroup
