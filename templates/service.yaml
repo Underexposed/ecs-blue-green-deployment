@@ -34,9 +34,9 @@ Parameters:
   IsProduction:
     Type: String
 
-  CertificateArn:
-    Description: SSL Certificate ARN For Our Domain
-    Type: String
+  # CertificateArn:
+  #   Description: SSL Certificate ARN For Our Domain
+  #   Type: String
 
 Resources:
 

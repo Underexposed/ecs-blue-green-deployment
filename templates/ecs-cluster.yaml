@@ -231,7 +231,7 @@ Resources:
         Identifier: "Code2"
         IsProduction: False
         #CertificateArn: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CertificateARN"]
-        CertificateArn: !FindInMap ["EnvMap", "dev", "CertificateARN"]
+        # CertificateArn: !FindInMap ["EnvMap", "dev", "CertificateARN"]
 
   BlueService:
     Type: AWS::CloudFormation::Stack
@@ -249,7 +249,7 @@ Resources:
         Identifier: "Code1"
         IsProduction: True
         #CertificateArn: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CertificateARN"]
-        CertificateArn: !FindInMap ["EnvMap", "dev", "CertificateARN"]
+        # CertificateArn: !FindInMap ["EnvMap", "dev", "CertificateARN"]
 
 
 Outputs:
