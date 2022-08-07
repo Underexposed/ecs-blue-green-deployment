@@ -27,8 +27,8 @@ Resources:
           IpProtocol: "TCP"
           FromPort: 80
           ToPort: 80
+        # Change below CidrIp to !Ref VpcCIDR, if you want to restrict the beta version of the traffic to VPC CIDRs only
         - CidrIp: "0.0.0.0/0"
-        # Change above to !Ref VpcCIDR, if you want to restrict the beta version of the traffic to VPC CIDRs only
           IpProtocol: "TCP"
           FromPort: 8080
           ToPort: 8080
@@ -43,6 +43,116 @@ Resources:
         - !Ref Subnet2
       SecurityGroups:
         - !Ref SecurityGroup
+      Scheme: "internet-facing"
+
+      # This Is Old YAML For V1 Load Balancers - Jesus Christ... So Much Time Wasted...
+      # Listeners:
+      #   - InstancePort: '80'
+      #     InstanceProtocol: "HTTP"
+      #     LoadBalancerPort: '80'
+      #     Protocol: "HTTP"
+        # - LoadBalancerPort: '443'
+        #   Protocol: "HTTPS"
+        #   InstancePort: '80'
+        #   InstanceProtocol: "HTTP"
+        #   SSLCertificateId: !Ref "CertificateArn"
+      #     PolicyNames:
+      #       #- !Sub "${PMServerEnv}-SSLNegotiationPolicy"
+      #       - "dev-SSLNegotiationPolicy"
+      # # List aws elb describe-load-balancer-policies
+      # Policies:
+      #   #- PolicyName: !Sub "${PMServerEnv}-SSLNegotiationPolicy"
+      #   - PolicyName: "dev-SSLNegotiationPolicy"
+      #     PolicyType: "SSLNegotiationPolicyType"
+      #     Attributes:
+      #     - Name: "Server-Defined-Cipher-Order"
+      #       Value: 'true'
+      #     - Name: "Protocol-TLSv1"
+      #       Value: 'false'
+      #     - Name: "Protocol-TLSv1.1"
+      #       Value: 'false'
+      #     - Name: "Protocol-TLSv1.2"
+      #       Value: 'true'
+      #     - Name: "Protocol-SSLv3"
+      #       Value: 'false'
+      #     - Name: "ECDHE-ECDSA-AES128-GCM-SHA256"
+      #       Value: 'true'
+      #     - Name: "ECDHE-ECDSA-AES128-GCM-SHA256"
+      #       Value: 'true'
+      #     - Name: "ECDHE-ECDSA-AES128-SHA256"
+      #       Value: 'true'
+      #     - Name: "ECDHE-RSA-AES128-SHA256"
+      #       Value: 'true'
+      #     - Name: "ECDHE-ECDSA-AES256-GCM-SHA384"
+      #       Value: 'true'
+      #     - Name: "ECDHE-RSA-AES256-GCM-SHA384"
+      #       Value: 'true'
+      #     - Name: "ECDHE-ECDSA-AES256-SHA384"
+      #       Value: 'true'
+      #     - Name: "ECDHE-RSA-AES256-SHA384"
+      #       Value: 'true'
+      #     - Name: "AES128-GCM-SHA256"
+      #       Value: 'true'
+      #     - Name: "AES128-SHA256"
+      #       Value: 'true'
+      #     - Name: "AES256-GCM-SHA384"
+      #       Value: 'true'
+      #     - Name: "AES256-SHA256"
+      #       Value: 'true'
+      # 
+
+  # Listener:
+  #   Type: AWS::ElasticLoadBalancingV2::Listener
+  #   Properties:
+  #     LoadBalancerArn: !Ref LoadBalancer
+  #     Port: 80
+  #     Protocol: HTTP
+  #     DefaultActions:
+  #       - Type: forward
+  #         TargetGroupArn: !Ref DefaultTargetGroup
+
+        
+  # ListenerCertificate:
+  #   Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
+  #   Properties: 
+  #     Certificates: 
+  #       - Certificate
+  #     ListenerArn: String
+
+  # # We define a default target group here, as this is a mandatory Parameters
+  # # when creating an Application Load Balancer Listener. This is not used, instead
+  # # a target group is created per-service in each service template (../services/*)
+  # DefaultTargetGroup:
+  #   Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  #   Properties:
+  #     #Name: !Sub ${EnvironmentName}-default
+  #     Name: "dev-default"
+  #     VpcId: !Ref VpcId
+  #     Port: 80
+  #     Protocol: HTTP   
+
+  # Listener:
+  #   Type: AWS::ElasticLoadBalancingV2::Listener
+  #   Properties:
+  #     LoadBalancerArn: !Ref LoadBalancer
+  #     Port: 443
+  #     Protocol: HTTPS
+  #     DefaultActions:
+  #       - Type: forward
+  #         TargetGroupArn: !Ref TargetGroup
+
+  # ListenerRule:
+  #   Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  #   Properties:
+  #     Actions:
+  #       - Type: forward
+  #         TargetGroupArn: !Ref TargetGroup
+  #     Conditions:
+  #       - Field: path-pattern
+  #         Values:
+  #         - "*"
+  #     ListenerArn: !Ref LoadBalancerListener
+  #     Priority: 1
         
 Outputs:
   ServiceUrl:

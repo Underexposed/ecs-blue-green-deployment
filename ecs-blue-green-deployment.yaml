@@ -54,7 +54,6 @@ Metadata:
           - GitHubUser
           - GitHubToken
 
-
 Resources:
   DeploymentPipeline:
     Type: AWS::CloudFormation::Stack

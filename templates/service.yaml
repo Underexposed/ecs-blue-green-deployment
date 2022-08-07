@@ -25,10 +25,17 @@ Parameters:
   Port:
     Type: Number
 
+  Protocol:
+    Type: String
+
   Identifier:
     Type: String
 
   IsProduction:
+    Type: String
+
+  CertificateArn:
+    Description: SSL Certificate ARN For Our Domain
     Type: String
 
 Resources:
@@ -38,7 +45,7 @@ Resources:
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: !Ref Port
-      Protocol: HTTP
+      Protocol: !Ref Protocol
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref TargetGroup
@@ -48,7 +55,7 @@ Resources:
     Properties:
       VpcId: !Ref VpcId
       Port: !Ref Port
-      Protocol: HTTP
+      Protocol: !Ref Protocol
       Matcher:
         HttpCode: 200-299
       HealthCheckIntervalSeconds: 10
@@ -79,6 +86,14 @@ Resources:
           - "*"
       ListenerArn: !Ref LoadBalancerListener
       Priority: 1
+
+  # This shit does not work
+  # ListenerCertificate:
+  #   Type: AWS::ElasticLoadBalancingV2::ListenerCertificate
+  #   Properties: 
+  #     Certificates: 
+  #       - CertificateArn: !Ref CertificateArn
+  #     ListenerArn: !Ref LoadBalancerListener
 
   ECSServiceRole:
     Type: AWS::IAM::Role
@@ -126,6 +141,7 @@ Resources:
                               "iam:*",
                               "ec2:*",
                               "ssm:*",
+                              "acm:*",
                               "elasticloadbalancing:*",
                               "autoscaling:*",
                               "secretsmanager:GetSecretValue",

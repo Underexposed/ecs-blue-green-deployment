@@ -71,13 +71,16 @@ Mappings:
     ca-central-1:
       AMI: ami-c802baac
 
-  # Specific Settings For Different Deployment Environments (Possibly Worth Setting Up Application Env Variables Here?)
+  # Specific Settings For Different Deployment Environments (Possibly Worth Setting Up Application Env Variables Here? No - main template and pass it in)
   EnvMap:
     dev:
-      WEBDOMAIN: "dev.artsthread.dev"
+      DomainName: "dev.artsthread.dev"
+      CertificateARN: arn:aws:acm:eu-west-1:738308653220:certificate/4a2de45a-2c6b-4dfd-95b0-cea3bdc26ad8
 
     prod:
-      WEBDOMAIN: "www.artsthread.dev"
+      DomainName: "www.artsthread.dev"
+      CertificateARN: arn:aws:acm:eu-west-1:738308653220:certificate/4a2de45a-2c6b-4dfd-95b0-cea3bdc26ad8
+
 
 
 Resources:
@@ -208,8 +211,8 @@ Resources:
       Parameters:
         DNSName: !GetAtt "LoadBalancer.Outputs.DNSName"
         HostedZoneId: !GetAtt "LoadBalancer.Outputs.HostedZoneId"
-        #WEBDOMAIN: !FindInMap ["EnvMap", !Ref "AWS::StackName", "WEBDOMAIN"]
-        WEBDOMAIN: !FindInMap ["EnvMap", "dev", "WEBDOMAIN"]
+        #DomainName: !FindInMap ["EnvMap", !Ref "AWS::StackName", "DomainName"]
+        DomainName: !FindInMap ["EnvMap", "dev", "DomainName"]
         HostedZone: !Ref "HostedZone"
 
   GreenService:
@@ -220,12 +223,15 @@ Resources:
         Cluster: !Ref Cluster
         LoadBalancer: !GetAtt LoadBalancer.Outputs.LoadBalancerArn
         Port: 8080
+        Protocol: "HTTP"
         Tag: !Ref Code2
         DesiredCount: "1"
         VpcId: !Ref VpcId
         Repository: !Ref Repository
         Identifier: "Code2"
         IsProduction: False
+        #CertificateArn: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CertificateARN"]
+        CertificateArn: !FindInMap ["EnvMap", "dev", "CertificateARN"]
 
   BlueService:
     Type: AWS::CloudFormation::Stack
@@ -235,12 +241,16 @@ Resources:
         Cluster: !Ref Cluster
         LoadBalancer: !GetAtt LoadBalancer.Outputs.LoadBalancerArn
         Port: 80
+        Protocol: "HTTP"
         Tag: !Ref Code1
         DesiredCount: "1"
         VpcId: !Ref VpcId
         Repository: !Ref Repository
         Identifier: "Code1"
         IsProduction: True
+        #CertificateArn: !FindInMap ["EnvMap", !Ref "AWS::StackName", "CertificateARN"]
+        CertificateArn: !FindInMap ["EnvMap", "dev", "CertificateARN"]
+
 
 Outputs:
   ClusterName:

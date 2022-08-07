@@ -10,7 +10,7 @@ Description: >
 
 Parameters: 
 
-  WEBDOMAIN:
+  DomainName:
     Description: "A reference to the Webserver FQDN domain name"
     Type: "String"
 
@@ -34,7 +34,7 @@ Resources:
       HostedZoneName: !Sub "${HostedZone}."
       Comment: "Zone apex alias targeted to myELB LoadBalancer."
       RecordSets:
-      - Name: !Sub "${WEBDOMAIN}."
+      - Name: !Sub "${DomainName}."
         Type: 'A'
         AliasTarget:
           HostedZoneId: !Ref "HostedZoneId"
